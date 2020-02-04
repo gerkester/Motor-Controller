@@ -1,0 +1,7 @@
+main.cpp:73:5:int main()	8	static
+main.cpp:120:6:void SystemClock_Config()	112	static
+main.cpp:160:13:void MX_TIM2_Init()	32	static
+main.cpp:205:13:void MX_USART2_UART_Init()	8	static
+main.cpp:240:13:void MX_GPIO_Init()	56	static
+main.cpp:296:7:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
+main.cpp:339:6:void Error_Handler()	8	static
