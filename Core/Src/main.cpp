@@ -52,7 +52,6 @@ UART_HandleTypeDef huart2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -94,10 +93,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
+
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
+  //Supply 3v3 for 5 seconds after startup
+  HAL_GPIO_WritePin(MPPT_Drain_Port, MPPT_Drain_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
  
  
@@ -197,40 +198,7 @@ static void MX_TIM2_Init(void)
 
 }
 
-/**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
 
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 38400;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
-
-}
 
 /**
   * @brief GPIO Initialization Function
@@ -289,6 +257,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+   HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
+   HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
@@ -304,10 +276,15 @@ static void MX_GPIO_Init(void)
 				mainCounter = 0;
 				carStarting = false;
 				//turn off signal
+				HAL_GPIO_WritePin(MPPT_Drain_Port, MPPT_Drain_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Controller_Drain_Port, Controller_Drain_Pin, GPIO_PIN_RESET);
+
 
 			} else if (mainCounter == 24) {
 
-
+				//supply 3v3 at 4.8 seconds and remain on
+				HAL_GPIO_WritePin(MC_Coil_Port, MC_Coil_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(MPPT_Coil_Port, MPPT_Coil_Pin, GPIO_PIN_SET);
 
 			} else {
 
@@ -320,8 +297,9 @@ static void MX_GPIO_Init(void)
 		if (oneSecondCounter >= 5) {
 
 			oneSecondCounter = 0;
-			//send signal to regen, don't know pins
-			//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+			//Turn off regen signal
+			HAL_GPIO_WritePin(Regen_Port, Regen_Pin, GPIO_PIN_RESET);
+			shouldCount = false;
 
 		} else if (shouldCount) {
 
@@ -330,6 +308,27 @@ static void MX_GPIO_Init(void)
 		}
 
 	}
+
+	void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+
+		if (GPIO_Pin == B1_Pin) {
+
+			//Blue button test
+
+		} else if (GPIO_Pin == Cruise_in_Pin) {
+
+			//Trigger timer for regen pin and set regen to 3v3
+			HAL_GPIO_WritePin(Regen_Port, Regen_Pin, GPIO_PIN_SET);
+			shouldCount = true;
+
+		} else {
+
+			__NOP ();
+
+		}
+
+	}
+
 /* USER CODE END 4 */
 
 /**
