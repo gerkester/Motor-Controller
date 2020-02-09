@@ -99,6 +99,12 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim2);
   //Supply 3v3 for 5 seconds after startup
   HAL_GPIO_WritePin(MPPT_Drain_Port, MPPT_Drain_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(Controller_Drain_Port, Controller_Drain_Pin, GPIO_PIN_SET);
+
+  //Set other pins to off
+  HAL_GPIO_WritePin(MC_Coil_Port, MC_Coil_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(MPPT_Coil_Port, MPPT_Coil_Pin, GPIO_PIN_RESET);
+
   /* USER CODE END 2 */
  
  
@@ -174,7 +180,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 31999;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 7500;
+  htim2.Init.Period = 300;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -285,6 +291,7 @@ static void MX_GPIO_Init(void)
 				//supply 3v3 at 4.8 seconds and remain on
 				HAL_GPIO_WritePin(MC_Coil_Port, MC_Coil_Pin, GPIO_PIN_SET);
 				HAL_GPIO_WritePin(MPPT_Coil_Port, MPPT_Coil_Pin, GPIO_PIN_SET);
+				mainCounter++;
 
 			} else {
 
